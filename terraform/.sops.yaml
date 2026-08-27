@@ -1,0 +1,5 @@
+---
+creation_rules:
+  - path_regex: 'cloud-init/.*\.sops\.yaml$'
+    age:
+      - age1gk7hl04yythddxc0wl9drsg6qp4lpv2tcemhcttlpy3kquaf793sfphf9e

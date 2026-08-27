@@ -1,0 +1,13 @@
+runcmd:
+  - swapoff -a
+  - sed -ri '/\sswap\s/s/^#?/#/' /etc/fstab
+  - systemctl enable --now qemu-guest-agent
+  - curl -sfL https://get.k3s.io | sh -
+  - kubectl completion bash > /etc/bash_completion.d/kubectl
+
+final_message: |
+  K3s provisioning completed.
+
+  Check with:
+    systemctl status k3s
+    kubectl get nodes

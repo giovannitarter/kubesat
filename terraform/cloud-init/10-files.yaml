@@ -1,0 +1,22 @@
+write_files:
+  - path: /etc/rancher/k3s/config.yaml
+    permissions: "0644"
+    owner: root:root
+    content: |
+      write-kubeconfig-mode: "0644"
+      node-name: k3s-server
+
+  - path: /etc/profile.d/k3s.sh
+    permissions: "0644"
+    owner: root:root
+    content: |
+      export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+      alias k=kubectl
+
+  - path: /etc/profile.d/kubectl.sh
+    owner: root:root
+    permissions: "0644"
+    defer: true
+    content: |
+      alias k=kubectl
+      complete -o default -F __start_kubectl k
