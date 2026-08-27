@@ -1,0 +1,11 @@
+venv/*
+
+terraform.tfstate
+terraform.tfstate.backup
+*secrets.tfvars
+.terraform.lock.hcl
+.terraform
+plan
+*/.env
+
+bak
