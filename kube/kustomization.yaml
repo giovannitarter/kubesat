@@ -4,3 +4,5 @@ kind: Kustomization
 
 resources:
   - ./namespaces/kflux.yaml
+  - ./infrastructure/sources/kflux.yaml
+  - ./infrastructure/zot/kflux.yaml
