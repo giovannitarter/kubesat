@@ -17,4 +17,5 @@ spec:
     name: flux-system
 
   dependsOn:
-    - sources
+    - name: sources
+      namespace: flux-system
