@@ -24,4 +24,4 @@ users:
     ssh_authorized_keys:
       - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILO2ogG4ayFwoIJVBXZTQOZI7vTB8z03e1KG/z7zixRw giovanni@G3ARCH
       - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDvbRhcyUAotOfDG8HB98GrZgsBk0E4G66dcI4HKN/D1 pupillo@cntsrv1
-    sudo: ALL=(ALL) NOPASSWD:ALL
+    sudo: ALL=(ALL) NOPASSWD:ALL  # pragma: allowlist secret

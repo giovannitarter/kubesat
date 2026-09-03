@@ -6,7 +6,7 @@ terraform {
       source  = "bpg/proxmox"
       version = "0.109.0"
     }
-    
+
     sops = {
       source  = "carlpett/sops"
       version = "~> 1.4"
@@ -32,4 +32,3 @@ provider "proxmox" {
     agent = true
   }
 }
-

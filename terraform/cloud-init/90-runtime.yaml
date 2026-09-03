@@ -3,7 +3,11 @@ runcmd:
   - sed -ri '/\sswap\s/s/^#?/#/' /etc/fstab
   - systemctl enable --now qemu-guest-agent
   - curl -sfL https://get.k3s.io | sh -
+  - curl -sfL https://fluxcd.io/install.sh | bash -
+  - curl -sfL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash -
   - kubectl completion bash > /etc/bash_completion.d/kubectl
+  # TODO: commented because currently removing the files before the resources are created!
+  #- sudo find /var/lib/rancher/k3s/server/manifests/ -name "*secret.yaml" -delete
 
 final_message: |
   K3s provisioning completed.

@@ -2,6 +2,9 @@
 data "sops_file" "flux_secret" {
   source_file = "${path.module}/cloud-init/30-flux-secret.sops.yaml"
 }
+data "sops_file" "sops_secret" {
+  source_file = "${path.module}/cloud-init/40-sops-secret.sops.yaml"
+}
 
 
 locals {
@@ -21,6 +24,10 @@ locals {
     data.sops_file.flux_secret.raw
   )
 
+  cloud_init_sops_secret = yamldecode(
+    data.sops_file.sops_secret.raw
+  )
+
   cloud_init_runtime = yamldecode(
     file("${path.module}/cloud-init/90-runtime.yaml")
   )
@@ -32,7 +39,8 @@ locals {
       write_files = concat(
         try(local.cloud_init_files.write_files, []),
         try(local.cloud_init_k3s.write_files, []),
-        try(local.cloud_init_flux_secret.write_files, [])
+        try(local.cloud_init_flux_secret.write_files, []),
+        try(local.cloud_init_sops_secret.write_files, [])
       )
     }
   )
@@ -80,7 +88,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
     interface    = "virtio0"
     iothread     = true
     discard      = "on"
-    size         = 120
+    size         = 30
   }
 
   agent {
