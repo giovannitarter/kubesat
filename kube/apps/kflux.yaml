@@ -3,13 +3,14 @@
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
-  name: sources
+  name: apps
   namespace: flux-system
 spec:
   interval: 5m
-  path: "./kube/infrastructure/sources"
+  path: "./kube/apps"
   prune: true
   sourceRef:
     kind: GitRepository
     name: flux-system
-  dependsOn: []
+  dependsOn:
+    - name: gateway

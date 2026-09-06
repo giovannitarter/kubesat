@@ -22,4 +22,41 @@ spec:
   upgrade:
     timeout: 5m
 
-  values: {}
+  values:
+    service:
+      type: ClusterIP
+      port: 443
+
+    ingress:
+      enabled: false
+
+    httpGet:
+      scheme: HTTPS
+      port: 5000
+
+    mountConfig: true
+
+    configFiles:
+      config.json: |-
+        {
+          "storage": {
+            "rootDirectory": "/var/lib/registry"
+          },
+          "http": {
+            "address": "0.0.0.0",
+            "port": "5000",
+            "readTimeout": "60s",
+            "writeTimeout": "60s",
+            "tls": {
+              "cert": "/etc/zot/tls/tls.crt",
+              "key": "/etc/zot/tls/tls.key"
+            }
+          },
+          "log": {
+            "level": "info"
+          }
+        }
+
+    externalSecrets:
+      - secretName: zot-pupillo-org # pragma: allowlist secret
+        mountPath: /etc/zot/tls

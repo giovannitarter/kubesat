@@ -1,0 +1,52 @@
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    providers:
+      kubernetesGateway:
+        enabled: true
+
+    # The Traefik Helm chart will create:
+    #   GatewayClass: traefik
+    #   Gateway:      traefik-gateway
+    gateway:
+      enabled: true
+      name: traefik-gateway
+
+      annotations:
+        cert-manager.io/cluster-issuer: cloudflare-letsencrypt
+
+      listeners:
+
+        # Optional HTTP listener.
+        # Useful if you also want HTTP -> HTTPS redirects.
+        web:
+          port: 8000
+          protocol: HTTP
+
+          namespacePolicy:
+            from: All
+
+        # HTTPS listener.
+        #
+        # Traefik listens internally on 8443.
+        # Its LoadBalancer Service exposes this as external port 443.
+        websecure:
+          port: 8443
+          protocol: HTTPS
+
+          hostname: "*.ksat.pupillo.org"
+
+          namespacePolicy:
+            from: All
+
+          mode: Terminate
+
+          certificateRefs:
+            - group: ""
+              kind: Secret
+              name: ksat-pupillo-org-tls

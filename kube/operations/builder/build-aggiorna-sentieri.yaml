@@ -1,0 +1,98 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: build-aggiorna-sentieri
+  namespace: builder
+spec:
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+
+      initContainers:
+        - name: git-clone
+          image: alpine/git
+
+          command:
+            - sh
+            - -c
+            - |
+              git clone \
+                --depth=1 \
+                git@github.com:giovannitarter/sat_sentieri.git \
+                /workspace
+
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+
+            - name: ssh
+              mountPath: /root/.ssh
+              readOnly: true
+
+      containers:
+        - name: build-aggiorna-sentieri
+          image: moby/buildkit:rootless
+
+          command:
+            - buildctl-daemonless.sh
+
+          args:
+            - build
+
+            - --frontend
+            - dockerfile.v0
+
+            - --local
+            - context=/workspace/roles/aggiorna-sentieri/files/build
+
+            - --local
+            - dockerfile=/workspace/roles/aggiorna-sentieri/files/build
+
+            - --output
+            - type=image,name=zot.ksat.pupillo.org/apps/aggiorna-sentieri:latest,push=true
+
+          env:
+            - name: BUILDKITD_FLAGS
+              value: --oci-worker-no-process-sandbox
+
+          securityContext:
+            runAsUser: 1000
+            runAsGroup: 1000
+
+            seccompProfile:
+              type: Unconfined
+
+            appArmorProfile:
+              type: Unconfined
+
+          volumeMounts:
+            - name: workspace
+              mountPath: /workspace
+              readOnly: true
+
+            - name: buildkit-state
+              mountPath: /home/user/.local/share/buildkit
+
+      volumes:
+        - name: workspace
+          emptyDir: {}
+
+        - name: buildkit-state
+          emptyDir: {}
+
+        - name: ssh
+          secret:
+            secretName: sentieri-ssh # pragma: allowlist secret
+            defaultMode: 0400
+            items:
+              - key: id_ed25519
+                path: id_ed25519
+                mode: 0400
+              - key: id_ed25519.pub
+                path: id_ed25519.pub
+                mode: 0444
+              - key: known_hosts
+                path: known_hosts
+                mode: 0444

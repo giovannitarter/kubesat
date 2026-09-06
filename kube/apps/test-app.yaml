@@ -1,0 +1,105 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: https-test
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: https-test-html
+  namespace: https-test
+data:
+  index.html: |
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>K3s Gateway API test</title>
+      </head>
+      <body>
+        <h1>HTTPS works</h1>
+        <p>
+          K3s + Traefik Gateway API +
+          cert-manager + Cloudflare DNS-01
+        </p>
+      </body>
+    </html>
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: https-test
+  namespace: https-test
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: https-test
+
+  template:
+    metadata:
+      labels:
+        app: https-test
+
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+
+          ports:
+            - name: http
+              containerPort: 80
+
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: index.html
+
+      volumes:
+        - name: html
+          configMap:
+            name: https-test-html
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: https-test
+  namespace: https-test
+spec:
+  selector:
+    app: https-test
+
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: https-test
+  namespace: https-test
+spec:
+
+  parentRefs:
+    - name: traefik-gateway
+      namespace: kube-system
+      sectionName: websecure
+
+  hostnames:
+    - "foo.ksat.pupillo.org"
+
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+      backendRefs:
+        - name: https-test
+          port: 80

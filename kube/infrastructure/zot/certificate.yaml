@@ -1,0 +1,16 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: zot-pupillo-org
+  namespace: zot
+spec:
+  secretName: zot-pupillo-org # pragma: allowlist secret
+
+  dnsNames:
+    - zot.ksat.pupillo.org
+
+  issuerRef:
+    name: cloudflare-letsencrypt
+    kind: ClusterIssuer
+    group: cert-manager.io
