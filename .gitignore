@@ -1,11 +1,27 @@
-venv/*
+# Python virtual environments
+.venv/
+venv/
 
-terraform.tfstate
-terraform.tfstate.backup
-*secrets.tfvars
-.terraform.lock.hcl
-.terraform
-plan
-*/.env
+# Terraform/OpenTofu local state, plans, providers, and variable secrets
+**/.terraform/
+**/.terraform.lock.hcl
+**/terraform.tfstate
+**/terraform.tfstate.backup
+**/*.tfstate
+**/*.tfstate.*
+**/*secrets.tfvars
+**/*.tfvars
+**/plan
+
+# Local private keys and cleartext secret material
+terraform/secrets/
+terraform/age_keypair/
+**/id_*
+**/*_keypair/
+**/*.agekey
+
+# Local environment files
+**/.env
+*.env
 
 bak
