@@ -3,5 +3,8 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - ./resources.yaml
   - ./test-app.yaml
+  - ./sentieri-db/kflux.yaml
+  - ./sentieri-webapp/kflux.yaml
+  - ./aggiorna-sentieri/kflux.yaml
+  - ./borgmatic/kflux.yaml

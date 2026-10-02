@@ -1,0 +1,119 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aggiorna-sentieri
+  namespace: aggiorna-sentieri
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: aggiorna-sentieri
+
+  template:
+    metadata:
+      labels:
+        app: aggiorna-sentieri
+
+    spec:
+      containers:
+        - name: aggiorna-sentieri
+          image: zot.ksat.pupillo.org/apps/aggiorna-sentieri:latest
+          imagePullPolicy: Always
+
+          env:
+            - name: TZ
+              value: Europe/Rome
+            - name: PGHOST
+              value: postgis.sentieri-db.svc.cluster.local
+            - name: PGDATABASE
+              value: sentieri
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: sentieri-webapp-db
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sentieri-webapp-db
+                  key: password
+            - name: POSTGRESQL_SCHEMAS
+              value: cartografia
+            - name: ARCHIVIO_FOTO
+              value: /archivio-foto
+            - name: PIWIGO_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: aggiorna-sentieri
+                  key: piwigo-host
+            - name: PIWIGO_USER
+              valueFrom:
+                secretKeyRef:
+                  name: aggiorna-sentieri
+                  key: piwigo-user
+            - name: PIWIGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aggiorna-sentieri
+                  key: piwigo-password
+            - name: PYTHONPATH
+              value: /opt/scripts/sentieri
+            - name: LOGDIR
+              value: /logs
+            - name: PIATTAFORMA_USER
+              valueFrom:
+                secretKeyRef:
+                  name: aggiorna-sentieri
+                  key: piattaforma-user
+            - name: PIATTAFORMA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: aggiorna-sentieri
+                  key: piattaforma-password
+            - name: SCRIPTS_PATH
+              value: /opt/scripts/sentieri/
+
+          volumeMounts:
+            - name: ssh
+              mountPath: /root/.ssh
+              readOnly: true
+
+            - name: archivio-foto
+              mountPath: /archivio-foto
+              readOnly: true
+
+            - name: download
+              mountPath: /opt/www/download
+
+            - name: logs
+              mountPath: /logs
+
+      volumes:
+        - name: ssh
+          secret:
+            secretName: sat2018-ssh
+            defaultMode: 0400
+            items:
+              - key: id_ssh_sat2018
+                path: id_ed25519
+                mode: 0400
+              - key: id_ssh_sat2018.pub
+                path: id_ed25519.pub
+                mode: 0444
+              - key: known_hosts
+                path: known_hosts
+                mode: 0444
+
+        - name: archivio-foto
+          persistentVolumeClaim:
+            claimName: archivio-foto
+            readOnly: true
+
+        - name: download
+          persistentVolumeClaim:
+            claimName: aggiorna-sentieri-download
+
+        - name: logs
+          emptyDir: {}

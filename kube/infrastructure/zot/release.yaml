@@ -24,8 +24,12 @@ spec:
 
   values:
     service:
-      type: ClusterIP
+      type: LoadBalancer
       port: 443
+
+      annotations:
+        metallb.io/address-pool: zot
+        metallb.io/loadBalancerIPs: "192.168.2.84"
 
     ingress:
       enabled: false

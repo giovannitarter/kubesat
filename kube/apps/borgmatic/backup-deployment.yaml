@@ -1,0 +1,86 @@
+---
+# Intentionally not included in kustomization.yaml. Add it there when backups are ready to run.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: borgmatic-backup
+  namespace: backup
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: borgmatic-backup
+
+  template:
+    metadata:
+      labels:
+        app: borgmatic-backup
+
+    spec:
+      containers:
+        - name: borgmatic
+          image: ghcr.io/borgmatic-collective/borgmatic:latest
+          command:
+            - borgmatic
+            - create
+
+          volumeMounts:
+            - name: ssh
+              mountPath: /root/.ssh
+              readOnly: true
+
+            - name: borgmatic-config
+              mountPath: /etc/borgmatic.d/config.yaml
+              subPath: config.yaml
+              readOnly: true
+
+            - name: borg-passphrase
+              mountPath: /run/secrets/borgmatic
+              readOnly: true
+
+            - name: borgmatic-database
+              mountPath: /run/secrets/borgmatic-database
+              readOnly: true
+
+            # - name: source
+            #   mountPath: /mnt/source
+            #   readOnly: true
+
+      volumes:
+        - name: ssh
+          secret:
+            secretName: borgmatic-ssh
+            defaultMode: 0400
+            items:
+              - key: id_ed25519_test
+                path: id_ed25519
+                mode: 0400
+              - key: id_ed25519_test.pub
+                path: id_ed25519.pub
+                mode: 0444
+              - key: known_hosts
+                path: known_hosts
+                mode: 0444
+
+        - name: borg-passphrase
+          secret:
+            secretName: borgmatic-passphrase
+            defaultMode: 0400
+            items:
+              - key: passphrase
+                path: passphrase
+                mode: 0400
+
+        - name: borgmatic-config
+          configMap:
+            name: borgmatic-config
+
+        - name: borgmatic-database
+          secret:
+            secretName: borgmatic-database
+            defaultMode: 0400
+
+        # - name: source
+        #   persistentVolumeClaim:
+        #     claimName: data-to-backup

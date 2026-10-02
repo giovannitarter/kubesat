@@ -10,6 +10,11 @@ spec:
       kubernetesGateway:
         enabled: true
 
+    service:
+      annotations:
+        metallb.io/address-pool: traefik
+        metallb.io/loadBalancerIPs: "192.168.2.83"
+
     # The Traefik Helm chart will create:
     #   GatewayClass: traefik
     #   Gateway:      traefik-gateway

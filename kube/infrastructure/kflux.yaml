@@ -108,3 +108,39 @@ spec:
       namespace: flux-system
     - name: cert-manager-config
       namespace: flux-system
+
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: metallb
+  namespace: flux-system
+spec:
+  interval: 5m
+  path: "./kube/infrastructure/metallb"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+  dependsOn:
+    - name: namespaces
+      namespace: flux-system
+
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: metallb-conf
+  namespace: flux-system
+spec:
+  interval: 5m
+
+  dependsOn:
+    - name: metallb
+      namespace: flux-system
+
+  path: "./kube/infrastructure/metallb/metallb-conf"
+  prune: true
+  sourceRef:
+    kind: GitRepository
+    name: flux-system

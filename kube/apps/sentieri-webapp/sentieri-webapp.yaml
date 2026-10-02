@@ -1,0 +1,135 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  namespace: sentieri-webapp
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: nginx
+
+  template:
+    metadata:
+      labels:
+        app: nginx
+
+    spec:
+      containers:
+        - name: nginx
+          image: zot.ksat.pupillo.org/apps/sentieri-webapp:latest
+          imagePullPolicy: Always
+
+          ports:
+            - name: http
+              containerPort: 80
+
+          env:
+            - name: TZ
+              value: Europe/Rome
+            - name: PGHOST
+              value: postgis.sentieri-db.svc.cluster.local
+            - name: PGDATABASE
+              value: sentieri
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: sentieri-webapp-db
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sentieri-webapp-db
+                  key: password
+            - name: POSTGRESQL_SCHEMAS
+              value: cartografia
+            - name: ARCHIVIO_FOTO
+              value: /archivio-foto
+            - name: PYTHONPATH
+              value: /opt/scripts/wsgi
+
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+
+            - name: nginx-auth
+              mountPath: /etc/nginx/auth
+              readOnly: true
+
+            - name: download
+              mountPath: /opt/www/download
+              readOnly: true
+
+            - name: archivio-foto
+              mountPath: /archivio-foto
+              readOnly: true
+
+            - name: nginx-log
+              mountPath: /var/log/nginx
+
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: nginx-config
+
+        - name: nginx-auth
+          secret:
+            secretName: sentieri-webapp-auth
+            defaultMode: 0400
+
+        - name: download
+          persistentVolumeClaim:
+            claimName: download
+            readOnly: true
+
+        - name: archivio-foto
+          persistentVolumeClaim:
+            claimName: archivio-foto
+            readOnly: true
+
+        - name: nginx-log
+          emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  namespace: sentieri-webapp
+spec:
+  selector:
+    app: nginx
+
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: sentieri.ksat.pupillo.org
+  namespace: sentieri-webapp
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: kube-system
+      sectionName: websecure
+
+  hostnames:
+    - sentieri.ksat.pupillo.org
+
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+      backendRefs:
+        - name: nginx
+          port: 80

@@ -1,0 +1,142 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: sentieri-webapp
+data:
+  nginx.conf: |
+    events {
+
+    }
+
+    http {
+      #error_log /etc/nginx/error_log.log warn;
+      client_max_body_size 20m;
+
+      proxy_cache_path /etc/nginx/cache keys_zone=one:500m max_size=1000m;
+
+      include    mime.types;
+      default_type application/octet-stream;
+
+      server {
+        listen            80;
+
+        #access_log  /var/log/nginx/log/unsecure.access.log  main;
+        add_header Strict-Transport-Security "max-age=15552000; includeSubDomains" always;
+
+        location /nc {
+            return 301 https://nc.sentieri.sat.tn.it;
+        }
+
+        location / {
+            root /opt/www;
+
+            # regola per mappare la root
+            rewrite ^/$ /static/home-sentieri.html break;
+
+            # regola per mappare l'url del download dal sito sat.tn.it
+            #rewrite ^/download-sentieri$ /static/download-sentieri.html break;
+
+            # regole per le pagine dell'alta via del porfido
+            rewrite ^/avp/[1-9]$ https://www.sat.tn.it/alta-via-del-porfido/ permanent;
+            rewrite ^/avp/10$ https://www.sat.tn.it/alta-via-del-porfido/ permanent;
+
+            proxy_set_header      X-Real-IP $remote_addr;
+            proxy_set_header      X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header      Host $host;
+        }
+
+        location /webapps {
+            proxy_read_timeout    90;
+            proxy_connect_timeout 90;
+            proxy_redirect        off;
+            uwsgi_pass 127.0.0.1:3031;
+            #uwsgi_param UWSGI_SCRIPT /webapps/schede-sentieri;
+            include uwsgi_params;
+
+            proxy_set_header      X-Real-IP $remote_addr;
+            proxy_set_header      X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header      Host $host;
+        }
+
+        location /webapps/ricerche-sentieri {
+            proxy_read_timeout    90;
+            proxy_connect_timeout 90;
+            proxy_redirect        off;
+            uwsgi_pass 127.0.0.1:3031;
+            include uwsgi_params;
+
+            auth_basic "Ricerche Sentieri";
+            auth_basic_user_file /etc/nginx/auth/.htpasswd-ricerche-sentieri;
+
+            proxy_set_header      X-Real-IP $remote_addr;
+            proxy_set_header      X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header      Host $host;
+        }
+
+        location /webapps/gestione-sentieri {
+            proxy_read_timeout    90;
+            proxy_connect_timeout 90;
+            proxy_redirect        off;
+            uwsgi_pass 127.0.0.1:3031;
+            uwsgi_param REMOTE_USER $remote_user;
+            include uwsgi_params;
+
+            auth_basic "Gestione Sentieri";
+            auth_basic_user_file /etc/nginx/auth/.htpasswd-gestione-sentieri;
+
+            proxy_set_header      X-Real-IP $remote_addr;
+            proxy_set_header      X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header      Host $host;
+        }
+
+        location /webapps/archivio-sentieri {
+            proxy_read_timeout    90;
+            proxy_connect_timeout 90;
+            proxy_redirect        off;
+            uwsgi_pass 127.0.0.1:3031;
+            uwsgi_param REMOTE_USER $remote_user;
+            include uwsgi_params;
+
+            auth_basic "Archivio Sentieri";
+            auth_basic_user_file /etc/nginx/auth/.htpasswd-archivio-sentieri;
+
+            proxy_set_header      X-Real-IP $remote_addr;
+            proxy_set_header      X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header      Host $host;
+        }
+
+        location ~ ^/(schede-sentieri|gpx-sentieri) {
+            proxy_read_timeout    90;
+            proxy_connect_timeout 90;
+            proxy_redirect        off;
+
+            rewrite ^(.*)$ /webapps$1 permanent;
+
+            proxy_set_header      X-Real-IP $remote_addr;
+            proxy_set_header      X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header      Host $host;
+        }
+
+        location /imgviewer {
+            proxy_read_timeout    90;
+            proxy_connect_timeout 90;
+            proxy_redirect        off;
+            #proxy_pass http://apache2;
+
+
+            if ($arg_luogo) {
+                rewrite ^.*$ /foto/index.php/category/$arg_numero-$arg_luogo permanent;
+            }
+
+            rewrite ^.*$ /foto/index.php/category/$arg_numero permanent;
+
+            proxy_set_header      X-Real-IP $remote_addr;
+            proxy_set_header      X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header      Host $host;
+
+        }
+
+      }
+    }

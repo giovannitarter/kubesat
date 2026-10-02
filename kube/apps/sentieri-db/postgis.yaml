@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgis
+  namespace: sentieri-db
+spec:
+  selector:
+    app: postgis
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: postgresql
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgis
+  namespace: sentieri-db
+spec:
+  serviceName: postgis
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: postgis
+
+  template:
+    metadata:
+      labels:
+        app: postgis
+
+    spec:
+      containers:
+        - name: postgis
+          image: postgis/postgis:17-3.5
+
+          ports:
+            - name: postgresql
+              containerPort: 5432
+
+          env:
+            - name: POSTGRES_DB
+              value: sentieri
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: sentieri-db
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: sentieri-db
+                  key: password
+
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 2Gi
