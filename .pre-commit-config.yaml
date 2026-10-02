@@ -15,5 +15,20 @@ repos:
   rev: v1.5.0
   hooks:
   - id: detect-secrets
-    args: ['--baseline', '.secrets.baseline']
+    args:
+      - '--baseline'
+      - '.secrets.baseline'
+
+      - --exclude-lines
+      - '^\s*secretName:\s*'
+
+      # SOPS age public recipients
+      - --exclude-secrets
+      - '^age1[0-9a-z]+$'
+
+      # SOPS encrypted values
+      - --exclude-secrets
+      - '^ENC\[AES256_GCM,.*\]$'
+
+
     exclude: package.lock.json
