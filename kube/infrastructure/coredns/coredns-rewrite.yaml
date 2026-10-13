@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coredns-custom
+  namespace: kube-system
+data:
+  rewrite.override: |
+    rewrite name exact zot.ksat.pupillo.org zot.zot.svc.cluster.local
+    rewrite name exact postgresql-sentieri postgis.sentieri-db.svc.cluster.local

@@ -1,0 +1,132 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: postgis-g3w-restore
+  namespace: cartografia
+spec:
+  backoffLimit: 0
+
+  template:
+    metadata:
+      labels:
+        app: postgis-g3w-restore
+
+    spec:
+      restartPolicy: Never
+
+      containers:
+        - name: borgmatic
+          image: ghcr.io/borgmatic-collective/borgmatic:latest
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              export PGHOST=postgis-g3w.cartografia.svc.cluster.local
+              export PGPORT=5432
+              export PGDATABASE="$(cat /run/secrets/cartografia-env/G3WSUITE_POSTGRES_DBNAME)"
+              export PGUSER="$(cat /run/secrets/cartografia-env/G3WSUITE_POSTGRES_USER_LOCAL)"
+              export PGPASSWORD="$(cat /run/secrets/cartografia-env/G3WSUITE_POSTGRES_PASS)"
+
+              until pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE"; do
+                echo "Waiting for PostGIS at $PGHOST:$PGPORT..."
+                sleep 5
+              done
+
+              if psql -tAc "select to_regclass('public.borgmatic_restore_marker')" | grep -q borgmatic_restore_marker; then
+                echo "Database already restored"
+                exit 0
+              fi
+
+              archive="$(
+                borgmatic repo-list \
+                  --repository='ssh://borg@pupillo.org:22016/home/borg/backups' \
+                  --match-archives='sentieri.sat.tn.it*' \
+                  --sort-by=timestamp \
+                  --last=1 \
+                  --short | grep -v 'Listing'
+              )"
+
+              if [ -z "$archive" ]; then
+                echo "No archive found" >&2
+                exit 1
+              fi
+
+              echo "Restoring g3wsuite database from archive: $archive"
+              borgmatic restore \
+                --repository='ssh://borg@pupillo.org:22016/home/borg/backups' \
+                --archive="$archive" \
+                --database=g3wsuite \
+                --original-port=5432
+
+              psql -v ON_ERROR_STOP=1 <<'SQL'
+              create table if not exists public.borgmatic_restore_marker (
+                id boolean primary key default true,
+                restored_at timestamptz not null default now(),
+                check (id)
+              );
+              insert into public.borgmatic_restore_marker (id)
+                values (true)
+                on conflict (id) do nothing;
+              SQL
+
+          volumeMounts:
+            - name: borgmatic-ssh
+              mountPath: /root/.ssh
+              readOnly: true
+
+            - name: borgmatic-config
+              mountPath: /etc/borgmatic.d/config.yaml
+              subPath: config.yaml
+              readOnly: true
+
+            - name: borg-passphrase
+              mountPath: /run/secrets/borgmatic
+              readOnly: true
+
+            - name: cartografia-env
+              mountPath: /run/secrets/cartografia-env
+              readOnly: true
+
+      volumes:
+        - name: borgmatic-config
+          configMap:
+            name: cartografia-borgmatic-config
+
+        - name: borg-passphrase
+          secret:
+            secretName: borg-passphrase
+            defaultMode: 0400
+            items:
+              - key: passphrase
+                path: passphrase
+                mode: 0400
+
+        - name: borgmatic-ssh
+          secret:
+            secretName: borgmatic-ssh
+            defaultMode: 0400
+            items:
+              - key: id_ed25519
+                path: id_ed25519
+                mode: 0400
+              - key: id_ed25519.pub
+                path: id_ed25519.pub
+                mode: 0444
+              - key: known_hosts
+                path: known_hosts
+                mode: 0444
+
+        - name: cartografia-env
+          secret:
+            secretName: cartografia-env
+            defaultMode: 0400
+            items:
+              - key: G3WSUITE_POSTGRES_DBNAME
+                path: G3WSUITE_POSTGRES_DBNAME
+                mode: 0400
+              - key: G3WSUITE_POSTGRES_USER_LOCAL
+                path: G3WSUITE_POSTGRES_USER_LOCAL
+                mode: 0400
+              - key: G3WSUITE_POSTGRES_PASS
+                path: G3WSUITE_POSTGRES_PASS
+                mode: 0400

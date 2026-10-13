@@ -1,0 +1,128 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-g3w
+  namespace: cartografia
+spec:
+  selector:
+    app: nginx-g3w
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-g3w
+  namespace: cartografia
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: nginx-g3w
+
+  template:
+    metadata:
+      labels:
+        app: nginx-g3w
+
+    spec:
+      containers:
+        - name: nginx
+          image: nginx
+
+          ports:
+            - name: http
+              containerPort: 8080
+
+          volumeMounts:
+            - name: shared-volume
+              mountPath: /shared-volume
+
+            - name: shared-volume
+              mountPath: /var/www/.well-known
+              subPath: var/www/.well-known
+
+            - name: cartografia-config
+              mountPath: /etc/nginx/conf.d/nginx.conf
+              subPath: nginx.conf
+              readOnly: true
+
+            - name: cartografia-config
+              mountPath: /etc/nginx/conf.d/revproxy
+              subPath: revproxy
+              readOnly: true
+
+            - name: cartografia-config
+              mountPath: /etc/nginx/conf.d/django
+              subPath: django
+              readOnly: true
+
+            - name: cartografia-config
+              mountPath: /etc/nginx/conf.d/django_ssl
+              subPath: django_ssl
+              readOnly: true
+
+            - name: cartografia-config
+              mountPath: /etc/nginx/conf.d/locations
+              subPath: locations
+              readOnly: true
+
+            - name: cartografia-config
+              mountPath: /etc/nginx/conf.d/letsencrypt
+              subPath: letsencrypt
+              readOnly: true
+
+            - name: cartografia-config
+              mountPath: /etc/nginx/conf.d/error_pages
+              subPath: error_pages
+              readOnly: true
+
+            - name: cartografia-config
+              mountPath: /etc/nginx/conf.d/html/502.html
+              subPath: 502.html
+              readOnly: true
+
+            - name: nginx-log
+              mountPath: /var/log/nginx
+
+      volumes:
+        - name: shared-volume
+          persistentVolumeClaim:
+            claimName: shared-volume
+
+        - name: cartografia-config
+          configMap:
+            name: cartografia-config
+
+        - name: nginx-log
+          emptyDir: {}
+
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cartografia.ksat.pupillo.org
+  namespace: cartografia
+spec:
+  parentRefs:
+    - name: traefik-gateway
+      namespace: kube-system
+      sectionName: websecure
+
+  hostnames:
+    - cartografia.ksat.pupillo.org
+
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+
+      backendRefs:
+        - name: nginx-g3w
+          port: 8080

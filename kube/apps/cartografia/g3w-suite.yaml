@@ -1,0 +1,183 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: g3w-suite
+  namespace: cartografia
+spec:
+  selector:
+    app: g3w-suite
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: g3w-suite
+  namespace: cartografia
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+
+  selector:
+    matchLabels:
+      app: g3w-suite
+
+  template:
+    metadata:
+      labels:
+        app: g3w-suite
+
+    spec:
+      initContainers:
+        - name: restore-shared-volume
+          image: ghcr.io/borgmatic-collective/borgmatic:latest
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              marker=/shared-volume/.borgmatic-restored
+              if [ -f "$marker" ]; then
+                echo "Shared volume already restored"
+                exit 0
+              fi
+
+              archive="$(
+                borgmatic repo-list \
+                  --repository='ssh://borg@pupillo.org:22016/home/borg/backups' \
+                  --match-archives='sentieri.sat.tn.it*' \
+                  --sort-by=timestamp \
+                  --last=1 \
+                  --short | grep -v 'Listing'
+              )"
+
+              if [ -z "$archive" ]; then
+                echo "No archive found" >&2
+                exit 1
+              fi
+
+              echo "Restoring shared volume from archive: $archive"
+              rm -rf /tmp/cartografia-restore
+              mkdir -p /tmp/cartografia-restore
+
+              borgmatic extract \
+                --repository='ssh://borg@pupillo.org:22016/home/borg/backups' \
+                --archive="$archive" \
+                --path='mnt/source/g3w' \
+                --destination=/tmp/cartografia-restore
+
+              mkdir -p /shared-volume
+              cp -a /tmp/cartografia-restore/mnt/source/g3w/shared_volume/. /shared-volume/
+              mkdir -p /shared-volume/QGIS /shared-volume/node_modules /shared-volume/var/www/.well-known
+              touch "$marker"
+
+          volumeMounts:
+            - name: shared-volume
+              mountPath: /shared-volume
+
+            - name: borgmatic-ssh
+              mountPath: /root/.ssh
+              readOnly: true
+
+            - name: borgmatic-config
+              mountPath: /etc/borgmatic.d/config.yaml
+              subPath: config.yaml
+              readOnly: true
+
+            - name: borg-passphrase
+              mountPath: /run/secrets/borgmatic
+              readOnly: true
+
+      containers:
+        - name: g3w-suite
+          image: g3wsuite/g3w-suite:v3.11.x
+
+          ports:
+            - name: http
+              containerPort: 8000
+
+          env:
+            - name: DISPLAY
+              value: :99
+            - name: QGIS_OPTIONS_PATH
+              value: /shared-volume/
+
+          envFrom:
+            - secretRef:
+                name: cartografia-env
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 10
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 120
+            periodSeconds: 60
+            timeoutSeconds: 10
+            failureThreshold: 3
+
+          volumeMounts:
+            - name: shared-volume
+              mountPath: /shared-volume
+
+            - name: shared-volume
+              mountPath: /code/node_modules
+              subPath: node_modules
+
+            - name: cartografia-config
+              mountPath: /code/g3w-admin/base/settings/local_settings.py
+              subPath: settings_docker.py
+              readOnly: true
+
+            - name: cartografia-config
+              mountPath: /shared-volume/QGIS/QGIS3.ini
+              subPath: QGIS3.ini
+              readOnly: true
+
+      volumes:
+        - name: shared-volume
+          persistentVolumeClaim:
+            claimName: shared-volume
+
+        - name: cartografia-config
+          configMap:
+            name: cartografia-config
+
+        - name: borgmatic-config
+          configMap:
+            name: cartografia-borgmatic-config
+
+        - name: borg-passphrase
+          secret:
+            secretName: borg-passphrase
+            defaultMode: 0400
+            items:
+              - key: passphrase
+                path: passphrase
+                mode: 0400
+
+        - name: borgmatic-ssh
+          secret:
+            secretName: borgmatic-ssh
+            defaultMode: 0400
+            items:
+              - key: id_ed25519
+                path: id_ed25519
+                mode: 0400
+              - key: id_ed25519.pub
+                path: id_ed25519.pub
+                mode: 0444
+              - key: known_hosts
+                path: known_hosts
+                mode: 0444

@@ -31,13 +31,31 @@ spec:
 
 ---
 apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: sentieri-webapp-archivio-foto
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Delete
+  storageClassName: ""
+  hostPath:
+    path: /opt/archivio-foto
+    type: DirectoryOrCreate
+
+---
+apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: archivio-foto
   namespace: sentieri-webapp
 spec:
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
+  storageClassName: ""
+  volumeName: sentieri-webapp-archivio-foto
   resources:
     requests:
       storage: 1Gi

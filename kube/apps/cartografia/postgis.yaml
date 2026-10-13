@@ -1,0 +1,88 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgis-g3w
+  namespace: cartografia
+spec:
+  selector:
+    app: postgis-g3w
+  ports:
+    - name: postgresql
+      port: 5432
+      targetPort: postgresql
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgis-g3w
+  namespace: cartografia
+spec:
+  serviceName: postgis-g3w
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: postgis-g3w
+
+  template:
+    metadata:
+      labels:
+        app: postgis-g3w
+
+    spec:
+      containers:
+        - name: postgis
+          image: kartoza/postgis:17-3.5--v2025.08.23
+
+          ports:
+            - name: postgresql
+              containerPort: 5432
+
+          env:
+            - name: POSTGRES_DBNAME
+              valueFrom:
+                secretKeyRef:
+                  name: cartografia-env
+                  key: G3WSUITE_POSTGRES_DBNAME
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: cartografia-env
+                  key: G3WSUITE_POSTGRES_USER_LOCAL
+            - name: POSTGRES_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: cartografia-env
+                  key: G3WSUITE_POSTGRES_PASS
+            - name: ALLOW_IP_RANGE
+              value: 0.0.0.0/0
+            - name: RUN_AS_ROOT
+              value: "True"
+            - name: FORCE_SSL
+              value: "False"
+
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -ec
+                - pg_isready -h 127.0.0.1
+            periodSeconds: 60
+            timeoutSeconds: 30
+            failureThreshold: 3
+
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql
+
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 1Gi

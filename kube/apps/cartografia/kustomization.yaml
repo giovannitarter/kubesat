@@ -1,0 +1,34 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+  - name: cartografia-config
+    namespace: cartografia
+    files:
+      - settings_docker.py=./config/g3w-suite/settings_docker.py
+      - QGIS3.ini=./config/qgis/QGIS3.ini
+      - nginx.conf=./config/nginx/nginx.conf
+      - revproxy=./config/nginx/revproxy
+      - django=./config/nginx/django
+      - django_ssl=./config/nginx/django_ssl
+      - locations=./config/nginx/locations
+      - letsencrypt=./config/nginx/letsencrypt
+      - error_pages=./config/nginx/error_pages
+      - 502.html=./config/nginx/html/502.html
+
+resources:
+  - ./namespace.yaml
+  - ./cartografia.secret.yaml
+  - ./volumes.yaml
+  - ./borgmatic-config.yaml
+  - ./postgis.yaml
+  - ./postgis-restore-job.yaml
+  - ./redis.yaml
+  - ./g3w-suite.yaml
+  - ./nginx.yaml
+  - ./borgmatic-ssh.secret.yaml
+  - ./borg-passphrase.secret.yaml

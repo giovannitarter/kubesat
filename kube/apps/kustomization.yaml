@@ -8,3 +8,4 @@ resources:
   - ./sentieri-webapp/kflux.yaml
   - ./aggiorna-sentieri/kflux.yaml
   - ./borgmatic/kflux.yaml
+  - ./cartografia/kflux.yaml

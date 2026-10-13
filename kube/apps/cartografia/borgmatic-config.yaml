@@ -1,0 +1,35 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cartografia-borgmatic-config
+  namespace: cartografia
+data:
+  config.yaml: |
+    postgresql_databases:
+      - name: g3wsuite
+        hostname: postgis-g3w
+        port: 5432
+        username: "{credential file /run/secrets/cartografia-env/G3WSUITE_POSTGRES_USER_LOCAL}"
+        password: "{credential file /run/secrets/cartografia-env/G3WSUITE_POSTGRES_PASS}"
+        format: plain
+        restore_hostname: postgis-g3w.cartografia.svc.cluster.local
+        restore_port: 5432
+        restore_username: "{credential file /run/secrets/cartografia-env/G3WSUITE_POSTGRES_USER_LOCAL}"
+        restore_password: "{credential file /run/secrets/cartografia-env/G3WSUITE_POSTGRES_PASS}"
+
+    repositories:
+      - path: ssh://borg@pupillo.org:22016/home/borg/backups
+        label: nas1
+
+    source_directories:
+      - /mnt/source/g3w
+
+    encryption_passphrase: "{credential file /run/secrets/borgmatic/passphrase}"
+
+    ssh_command: >-
+      ssh
+      -i /root/.ssh/id_ed25519
+      -o IdentitiesOnly=yes
+      -o UserKnownHostsFile=/root/.ssh/known_hosts
+      -o StrictHostKeyChecking=yes
