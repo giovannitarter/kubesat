@@ -2,10 +2,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+namespace: aggiorna-sentieri
+
 resources:
   - ./namespace.yaml
+  - ../shared-secrets/sentieri-webapp.secret.yaml
+  - ../shared-secrets/sat2018-ssh.secret.yaml
+  - ../shared-secrets/aggiorna-sentieri.secret.yaml
   - ./volumes.yaml
   - ./aggiorna-sentieri.yaml
-  - ./sentieri-webapp.secret.yaml
-  - ./aggiorna-sentieri.secret.yaml
-  - ./sat2018-ssh.secret.yaml

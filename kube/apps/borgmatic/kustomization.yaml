@@ -2,10 +2,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+namespace: backup
+
 resources:
   - ./namespace.yaml
-  - ./borgmatic-ssh.secret.yaml
-  - ./borgmatic-passphrase.secret.yaml
-  - ./borgmatic-database.secret.yaml
+  - ../shared-secrets/borgmatic-ssh.secret.yaml
+  - ../shared-secrets/borg-passphrase.secret.yaml
+  - ../shared-secrets/borgmatic-database.secret.yaml
   - ./config.yaml
   - ./resources.yaml

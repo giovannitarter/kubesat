@@ -2,10 +2,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
+namespace: sentieri-webapp
+
 resources:
   - ./namespace.yaml
   - ./certificate.yaml
   - ./nginx-config.yaml
   - ./volumes.yaml
-  - ./sentieri-webapp.secret.yaml
+  - ../shared-secrets/sentieri-webapp.secret.yaml
   - ./sentieri-webapp.yaml
