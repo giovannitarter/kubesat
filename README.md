@@ -3,6 +3,13 @@
 GitOps and provisioning repository for the `kubesat` Kubernetes cluster that will hosts sat services.
 Currently Work-in-progress.
 
+Main services:
+    - https://sentieri.ksat.pupillo.org
+    - https://cartografia.ksat.pupillo.org
+    - https://grafana.ksat.pupillo.org
+
+
+
 The repository contains:
 
 - Terraform code to create a Debian/K3s virtual machine on Proxmox.
@@ -145,4 +152,12 @@ kubectl run skopeo-tmp -it --rm --image rapidfort/skopeo-ib -- \
   copy --dest-tls-verify=false \
   docker://docker.io/library/alpine:latest \
   docker://zot.zot:5000/alpine:latest
+```
+
+
+## Notes
+```
+kubectl -n aggiorna-sentieri create job --from=cronjob/sentieri-download download-$(date +%Y-%m-%d-%H%M)
+curl -s https://zot.ksat.pupillo.org/v2/_catalog
+kubectl run skopeo-tmp -it --rm --image rapidfort/skopeo-ib -- list-tags docker://zot.ksat.pupillo.org/sentieri-download
 ```

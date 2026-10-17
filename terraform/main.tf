@@ -8,6 +8,9 @@ data "sops_file" "sops_secret" {
 
 
 locals {
+
+  node_name = var.pve_node
+
   cloud_init_base = yamldecode(
     file("${path.module}/cloud-init/00-base.yaml")
   )
@@ -56,17 +59,17 @@ locals {
 resource "proxmox_download_file" "vm_image" {
   content_type = "import"
   datastore_id = "local"
-  file_name    = "debian-13-generic-amd64-20260819-2575.qcow2"
-  node_name    = "pvemini"
-  url          = "http://cloud.debian.org/images/cloud/trixie/20260819-2575/debian-13-generic-amd64-20260819-2575.qcow2"
-  overwrite    = false
+  file_name    = "debian-13-generic-amd64-latest.qcow2"
+  node_name    = local.node_name
+  url          = "https://cloud.debian.org/images/cloud/trixie/latest/debian-13-generic-amd64.qcow2"
+  overwrite    = true
   #decompression_algorithm = "zst"
 }
 
 resource "proxmox_virtual_environment_file" "cloudconfig" {
   content_type = "snippets"
   datastore_id = "local"
-  node_name    = "pvemini"
+  node_name    = local.node_name
   source_raw {
     #data      = file("${path.module}/cloud-config.yaml")
     data      = local.cloud_init_yaml
@@ -77,7 +80,7 @@ resource "proxmox_virtual_environment_file" "cloudconfig" {
 
 resource "proxmox_virtual_environment_vm" "vm" {
   name      = "kubesat0"
-  node_name = "pvemini"
+  node_name    = local.node_name
 
   # should be true if qemu agent is not installed / enabled on the VM
   stop_on_destroy = true
@@ -88,7 +91,7 @@ resource "proxmox_virtual_environment_vm" "vm" {
     interface    = "virtio0"
     iothread     = true
     discard      = "on"
-    size         = 30
+    size         = 50
   }
 
   agent {
@@ -105,8 +108,8 @@ resource "proxmox_virtual_environment_vm" "vm" {
   }
 
   memory {
-    dedicated = 3072
-    floating  = 3072
+    dedicated = 6144
+    #floating  = 3072
   }
 
 

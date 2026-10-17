@@ -24,10 +24,10 @@ provider "sops" {}
 provider "cloudinit" {}
 
 provider "proxmox" {
-  endpoint = "https://proxmox.pupillo.org:8006/"
+  endpoint = var.pve_endpoint
   username = var.pve_username
   password = var.pve_password
-  insecure = false
+  insecure = ! var.pve_valid_cert
   ssh {
     agent = true
   }
