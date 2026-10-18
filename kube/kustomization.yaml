@@ -3,7 +3,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - ./namespaces/kflux.yaml
   - ./infrastructure/kflux.yaml
   - ./apps/kflux.yaml
   - ./operations/builder/kflux.yaml
+  - ./monitoring/kflux.yaml
