@@ -4,4 +4,7 @@ kind: Kustomization
 
 resources:
   - ./cert-manager.yaml
-  - ./zot-repo.yaml
+  - ./metrics-server.yaml
+  - ./zot.yaml
+  - ./grafana.yaml
+  - ./prometheus-community.yaml
