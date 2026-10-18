@@ -1,0 +1,39 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sentieri-db-borgmatic-config
+  namespace: sentieri-db
+data:
+  config.yaml: |
+    postgresql_databases:
+      - name: sentieri
+        hostname: postgresql-sentieri
+        port: 5432
+        username: "{credential file /run/secrets/sentieri-db/username}"
+        password: "{credential file /run/secrets/sentieri-db/password}"
+        options: --exclude-schema=raster
+        format: plain
+        restore_hostname: postgis.sentieri-db.svc.cluster.local
+        restore_port: 5432
+        restore_username: "{credential file /run/secrets/sentieri-db/username}"
+        restore_password: "{credential file /run/secrets/sentieri-db/password}"
+
+    repositories:
+      - path: ssh://borg@pupillo.org:22016/home/borg/backups
+        label: nas1
+
+    source_directories:
+      - /mnt/source/archivio-foto
+      - /mnt/source/nextcloud
+      - /mnt/source/piwigo
+      - /mnt/source/g3w
+
+    encryption_passphrase: "{credential file /run/secrets/borgmatic/passphrase}"
+
+    ssh_command: >-
+      ssh
+      -i /root/.ssh/id_ed25519
+      -o IdentitiesOnly=yes
+      -o UserKnownHostsFile=/root/.ssh/known_hosts
+      -o StrictHostKeyChecking=yes

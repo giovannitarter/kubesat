@@ -19,3 +19,5 @@ spec:
     provider: sops
     secretRef:
       name: sops-age
+
+  dependsOn: []

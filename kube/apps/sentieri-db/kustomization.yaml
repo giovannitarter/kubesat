@@ -6,5 +6,9 @@ namespace: sentieri-db
 
 resources:
   - ./namespace.yaml
+  - ../shared-secrets/borgmatic-ssh.secret.yaml
+  - ../shared-secrets/borg-passphrase.secret.yaml
   - ../shared-secrets/sentieri-db.secret.yaml
+  - ./borgmatic-config.yaml
   - ./postgis.yaml
+  - ./postgis-restore-job.yaml

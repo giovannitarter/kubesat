@@ -65,7 +65,7 @@ spec:
 
         - name: borg-passphrase
           secret:
-            secretName: borgmatic-passphrase
+            secretName: borg-passphrase
             defaultMode: 0400
             items:
               - key: passphrase

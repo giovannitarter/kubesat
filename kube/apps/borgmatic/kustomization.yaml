@@ -10,4 +10,3 @@ resources:
   - ../shared-secrets/borg-passphrase.secret.yaml
   - ../shared-secrets/borgmatic-database.secret.yaml
   - ./config.yaml
-  - ./resources.yaml
