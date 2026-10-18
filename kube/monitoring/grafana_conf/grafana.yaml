@@ -1,0 +1,62 @@
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: Grafana
+metadata:
+  name: external-grafana
+  namespace: monitoring
+  labels:
+    app: grafana
+spec:
+  # client:
+  #   tls:
+  #     insecureSkipVerify: true
+  external:
+    url: http://prometheus-grafana.monitoring.svc.cluster.local
+    adminPassword:
+      name: grafana-admin-credentials
+      key: GF_SECURITY_ADMIN_PASSWORD
+    adminUser:
+      name: grafana-admin-credentials
+      key: GF_SECURITY_ADMIN_USER
+
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: prometheus
+spec:
+  instanceSelector:
+    matchLabels:
+      app: grafana
+  datasource:
+    name: Prometheus
+    type: prometheus
+    uid: prometheus
+    url: http://prometheus-kube-prometheus-prometheus:9090/
+    access: proxy
+    isDefault: true
+    jsonData:
+      httpMethod: POST
+      timeInterval: 30s
+      # tlsSkipVerify: true
+    editable: false
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: alertmanager
+spec:
+  instanceSelector:
+    matchLabels:
+      app: grafana
+  datasource:
+    name: Alertmanager
+    type: alertmanager
+    uid: alertmanager
+    url: http://prometheus-kube-prometheus-alertmanager:9093/
+    access: proxy
+    jsonData:
+      handleGrafanaManagedAlerts: false
+      implementation: prometheus
+      # tlsSkipVerify: true
+    editable: false
