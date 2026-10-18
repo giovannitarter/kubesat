@@ -10,4 +10,18 @@ resources:
   - ../shared-secrets/sat2018-ssh.secret.yaml
   - ../shared-secrets/aggiorna-sentieri.secret.yaml
   - ./volumes.yaml
-  - ./aggiorna-sentieri.yaml
+  - ./sentieri-download-cronjob.yaml
+  - ./sentieri-download-bootstrap-job.yaml
+
+
+replacements:
+  - source:
+      kind: CronJob
+      name: sentieri-download
+      fieldPath: spec.jobTemplate.spec
+    targets:
+      - select:
+          kind: Job
+          name: sentieri-download-bootstrap
+        fieldPaths:
+          - spec

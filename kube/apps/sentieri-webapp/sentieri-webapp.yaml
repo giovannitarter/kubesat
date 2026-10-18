@@ -82,9 +82,9 @@ spec:
             defaultMode: 0400
 
         - name: download
-          persistentVolumeClaim:
-            claimName: download
-            readOnly: true
+          image:
+            reference: zot.ksat.pupillo.org/sentieri-download:latest
+            pullPolicy: Always
 
         - name: archivio-foto
           persistentVolumeClaim:

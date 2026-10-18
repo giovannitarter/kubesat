@@ -21,7 +21,5 @@ spec:
       name: sops-age
 
   dependsOn:
-    - name: namespaces
-      namespace: flux-system
     - name: borgmatic
       namespace: flux-system

@@ -1,0 +1,206 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: sentieri-download
+  namespace: aggiorna-sentieri
+spec:
+  schedule: "0 0 * * *"
+  timeZone: Europe/Rome
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          restartPolicy: Never
+
+          initContainers:
+            - name: install-oras
+              image: ghcr.io/oras-project/oras:v1.2.3
+              command:
+                - /bin/sh
+                - -c
+                - cp /bin/oras /tools/oras
+              volumeMounts:
+                - name: tools
+                  mountPath: /tools
+
+          containers:
+            - name: aggiorna-sentieri
+              image: zot.ksat.pupillo.org/apps/aggiorna-sentieri:latest
+              imagePullPolicy: Always
+
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -eu
+
+                  ENV_FILE=/tmp/aggiorna-sentieri_vars
+                  echo "#!/bin/bash" > "$ENV_FILE"
+                  for i in \
+                          ARCHIVIO_FOTO \
+                          LOGDIR \
+                          PGDATABASE \
+                          PGHOST \
+                          PGPASSWORD \
+                          PGUSER \
+                          PIATTAFORMA_PASSWORD \
+                          PIATTAFORMA_USER \
+                          PIWIGO_HOST \
+                          PIWIGO_PASSWORD \
+                          PIWIGO_USER \
+                          POSTGRESQL_SCHEMAS \
+                          PYTHONPATH \
+                          SCRIPTS_PATH \
+                          TZ;
+                  do
+                          echo "export ${i}=$(printenv "${i}")" >> "$ENV_FILE"
+                  done
+                  chmod +x "$ENV_FILE"
+
+                  set +e
+                  /opt/scripts/sentieri/aggiorna-sentieri.sh
+                  set -e
+
+                  tag="$(date '+%Y%m%d-%H%M')"
+                  created="$(date -u '+%Y-%m-%dT%H:%M:%SZ')"
+                  layer="sentieri-download-${tag}.tar"
+                  archive="${layer}.gz"
+                  config="sentieri-download-${tag}.config.json"
+
+                  cd /tmp
+                  tar -C /opt/www/download -cf "${layer}" .
+                  diff_id="$(sha256sum "${layer}" | awk '{print $1}')"
+                  gzip -n "${layer}"
+
+                  architecture="$(uname -m)"
+                  case "${architecture}" in
+                    x86_64) architecture=amd64 ;;
+                    aarch64) architecture=arm64 ;;
+                  esac
+
+                  cat > "${config}" <<EOF
+                  {
+                    "created": "${created}",
+                    "architecture": "${architecture}",
+                    "os": "linux",
+                    "config": {},
+                    "rootfs": {
+                      "type": "layers",
+                      "diff_ids": ["sha256:${diff_id}"]
+                    },
+                    "history": [
+                      {
+                        "created": "${created}",
+                        "created_by": "/opt/scripts/sentieri/aggiorna-sentieri.sh"
+                      }
+                    ]
+                  }
+                  EOF
+
+                  image="zot.ksat.pupillo.org/sentieri-download"
+                  /tools/oras push \
+                    --config "${config}:application/vnd.oci.image.config.v1+json" \
+                    "${image}:${tag},latest" \
+                    "${archive}:application/vnd.oci.image.layer.v1.tar+gzip"
+
+              env:
+                - name: TZ
+                  value: Europe/Rome
+                - name: PGHOST
+                  value: postgis.sentieri-db.svc.cluster.local
+                - name: PGDATABASE
+                  value: sentieri
+                - name: PGUSER
+                  valueFrom:
+                    secretKeyRef:
+                      name: sentieri-webapp-db
+                      key: username
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: sentieri-webapp-db
+                      key: password
+                - name: POSTGRESQL_SCHEMAS
+                  value: cartografia
+                - name: ARCHIVIO_FOTO
+                  value: /archivio-foto
+                - name: PIWIGO_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: aggiorna-sentieri
+                      key: piwigo-host
+                - name: PIWIGO_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: aggiorna-sentieri
+                      key: piwigo-user
+                - name: PIWIGO_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: aggiorna-sentieri
+                      key: piwigo-password
+                - name: PYTHONPATH
+                  value: /opt/scripts/sentieri
+                - name: LOGDIR
+                  value: /logs
+                - name: PIATTAFORMA_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: aggiorna-sentieri
+                      key: piattaforma-user
+                - name: PIATTAFORMA_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: aggiorna-sentieri
+                      key: piattaforma-password
+                - name: SCRIPTS_PATH
+                  value: /opt/scripts/sentieri/
+
+              volumeMounts:
+                - name: tools
+                  mountPath: /tools
+                  readOnly: true
+
+                - name: ssh
+                  mountPath: /root/.ssh
+                  readOnly: true
+
+                - name: archivio-foto
+                  mountPath: /archivio-foto
+                  readOnly: true
+
+                - name: logs
+                  mountPath: /logs
+
+          volumes:
+            - name: tools
+              emptyDir: {}
+
+            - name: ssh
+              secret:
+                secretName: sat2018-ssh
+                defaultMode: 0400
+                items:
+                  - key: id_ssh_sat2018
+                    path: id_ed25519
+                    mode: 0400
+                  - key: id_ssh_sat2018.pub
+                    path: id_ed25519.pub
+                    mode: 0444
+                  - key: known_hosts
+                    path: known_hosts
+                    mode: 0444
+
+            - name: archivio-foto
+              persistentVolumeClaim:
+                claimName: archivio-foto
+                readOnly: true
+
+            - name: logs
+              emptyDir: {}
