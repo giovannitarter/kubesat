@@ -5,9 +5,9 @@ Currently Work-in-progress.
 
 Main services:
 
-    - https://sentieri.ksat.pupillo.org
-    - https://cartografia.ksat.pupillo.org
-    - https://grafana.ksat.pupillo.org
+- https://sentieri.ksat.pupillo.org
+- https://cartografia.ksat.pupillo.org
+- https://grafana.ksat.pupillo.org
 
 
 The repository contains:
