@@ -4,10 +4,10 @@ GitOps and provisioning repository for the `kubesat` Kubernetes cluster that wil
 Currently Work-in-progress.
 
 Main services:
+
     - https://sentieri.ksat.pupillo.org
     - https://cartografia.ksat.pupillo.org
     - https://grafana.ksat.pupillo.org
-
 
 
 The repository contains:

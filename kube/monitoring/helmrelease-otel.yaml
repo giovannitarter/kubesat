@@ -1,0 +1,77 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: otel-collector
+  namespace: monitoring
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: opentelemetry-collector
+      version: '0.176.*'
+      sourceRef:
+        kind: HelmRepository
+        name: opentelemetry
+        namespace: flux-system
+
+      interval: 5m
+
+  install:
+    timeout: 5m
+    crds: CreateReplace
+
+  upgrade:
+    timeout: 5m
+    crds: CreateReplace
+
+  values:
+    mode: daemonset
+
+    image:
+      repository: otel/opentelemetry-collector-k8s
+
+    presets:
+      logsCollection:
+        enabled: true
+
+      kubernetesAttributes:
+        enabled: true
+
+    config:
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:4317
+
+            http:
+              endpoint: 0.0.0.0:4318
+
+      processors:
+        memory_limiter:
+          check_interval: 1s
+          limit_mib: 400
+
+        batch:
+          timeout: 5s
+          send_batch_size: 1024
+
+      exporters:
+        otlphttp/loki:
+          endpoint: http://loki-gateway.monitoring.svc.cluster.local/otlp
+
+      service:
+        pipelines:
+          logs:
+            receivers:
+              - otlp
+              - filelog
+
+            processors:
+              - memory_limiter
+              - k8sattributes
+              - batch
+
+            exporters:
+              - otlphttp/loki

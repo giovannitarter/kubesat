@@ -60,3 +60,19 @@ spec:
       implementation: prometheus
       # tlsSkipVerify: true
     editable: false
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: loki
+spec:
+  instanceSelector:
+    matchLabels:
+      app: grafana
+  datasource:
+    name: Loki
+    type: loki
+    uid: loki
+    url: http://loki-gateway.monitoring.svc.cluster.local
+    access: proxy
+    editable: false
