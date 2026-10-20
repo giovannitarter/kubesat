@@ -7,5 +7,6 @@ resources:
   - ./helmrelease.yaml
   - ./helmrelease-loki.yaml
   - ./helmrelease-otel.yaml
+  - ./helmrelease-tempo.yaml
   - ./httproute.yaml
   - ./grafana-credentials.secret.yaml

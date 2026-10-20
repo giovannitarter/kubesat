@@ -72,7 +72,46 @@ spec:
   datasource:
     name: Loki
     type: loki
-    uid: loki
     url: http://loki-gateway.monitoring.svc.cluster.local
     access: proxy
     editable: false
+---
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDatasource
+metadata:
+  name: tempo
+  namespace: monitoring
+spec:
+
+  instanceSelector:
+    matchLabels:
+      app: grafana
+
+  resyncPeriod: 10m
+
+  datasource:
+    name: tempo
+    uid: tempo
+    type: tempo
+    access: proxy
+    url: http://tempo.monitoring.svc.cluster.local:3200
+    isDefault: false
+    editable: true
+
+    jsonData:
+      httpMethod: GET
+      nodeGraph:
+        enabled: true
+      search:
+        hide: false
+      tracesToLogsV2:
+        datasourceUid: loki
+        spanStartTimeShift: "-1h"
+        spanEndTimeShift: "1h"
+        tags:
+          - key: service.name
+            value: service_name
+        filterByTraceID: true
+        filterBySpanID: false
+      serviceMap:
+        datasourceUid: prometheus

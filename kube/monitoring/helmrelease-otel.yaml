@@ -31,6 +31,26 @@ spec:
     image:
       repository: otel/opentelemetry-collector-k8s
 
+    fullnameOverride: otel-collector
+
+    service:
+      enabled: true
+      type: ClusterIP
+
+    ports:
+      otlp:
+        enabled: true
+        containerPort: 4317
+        servicePort: 4317
+        protocol: TCP
+
+      otlp-http:
+        enabled: true
+        containerPort: 4318
+        servicePort: 4318
+        protocol: TCP
+
+
     presets:
       logsCollection:
         enabled: true
@@ -61,8 +81,12 @@ spec:
         otlphttp/loki:
           endpoint: http://loki-gateway.monitoring.svc.cluster.local/otlp
 
+        otlphttp/tempo:
+          endpoint: http://tempo.monitoring.svc.cluster.local:4318
+
       service:
         pipelines:
+
           logs:
             receivers:
               - otlp
@@ -75,3 +99,52 @@ spec:
 
             exporters:
               - otlphttp/loki
+
+
+          traces:
+            receivers:
+              - otlp
+            processors:
+              - memory_limiter
+              - batch
+            exporters:
+              - otlphttp/tempo
+
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: otel-operator
+  namespace: monitoring
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: opentelemetry-operator
+      version: '0.126.*'
+      sourceRef:
+        kind: HelmRepository
+        name: opentelemetry
+        namespace: flux-system
+
+      interval: 5m
+
+  install:
+    timeout: 5m
+    crds: CreateReplace
+
+  upgrade:
+    timeout: 5m
+    crds: CreateReplace
+
+  values:
+
+    manager:
+      collectorImage:
+        repository: otel/opentelemetry-collector-k8s
+
+    admissionWebhooks:
+      certManager:
+        enabled: true
+      autoGenerateCert:
+        enabled: false
