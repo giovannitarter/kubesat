@@ -1,0 +1,9 @@
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: keel-repo
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://keel-hq.github.io/keel/

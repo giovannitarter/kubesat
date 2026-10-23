@@ -6,6 +6,7 @@ resources:
   - ./cert-manager.yaml
   - ./grafana-community.yaml
   - ./grafana.yaml
+  - ./keel.yaml
   - ./opentelemetry.yaml
   - ./prometheus-community.yaml
   - ./zot.yaml
