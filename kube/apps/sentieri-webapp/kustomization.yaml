@@ -7,6 +7,7 @@ namespace: sentieri-webapp
 resources:
   - ./namespace.yaml
   - ./certificate.yaml
+  - ./instrumentation.yaml
   - ./nginx-config.yaml
   - ./volumes.yaml
   - ../shared-secrets/sentieri-webapp.secret.yaml

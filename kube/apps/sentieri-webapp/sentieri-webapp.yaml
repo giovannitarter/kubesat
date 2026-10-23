@@ -4,6 +4,12 @@ kind: Deployment
 metadata:
   name: nginx
   namespace: sentieri-webapp
+  annotations:
+    keel.sh/policy: force
+    keel.sh/trigger: poll
+    keel.sh/matchTag: "true"
+    keel.sh/pollSchedule: "@every 5m"
+    keel.sh/imageVolumes: "true"
 spec:
   replicas: 1
 
@@ -15,6 +21,8 @@ spec:
     metadata:
       labels:
         app: nginx
+      annotations:
+        instrumentation.opentelemetry.io/inject-python: "true"
 
     spec:
       containers:
