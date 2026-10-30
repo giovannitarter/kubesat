@@ -22,3 +22,6 @@ spec:
   dependsOn:
     - name: sentieri-db
       namespace: flux-system
+
+    - name: monitoring
+      namespace: flux-system

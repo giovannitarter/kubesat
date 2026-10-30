@@ -6,4 +6,5 @@ resources:
   - ./infrastructure/kflux.yaml
   - ./apps/kflux.yaml
   - ./operations/builder/kflux.yaml
+  - ./operations/hooklet/kflux.yaml
   - ./monitoring/kflux.yaml

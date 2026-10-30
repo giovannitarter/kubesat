@@ -23,6 +23,10 @@ spec:
     timeout: 5m
 
   values:
+    persistence: true
+    pvc:
+      storage: 5Gi
+
     service:
       type: LoadBalancer
       port: 443

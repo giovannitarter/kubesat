@@ -148,16 +148,17 @@ skopeo copy --dest-tls-verify=false \
 Or run Skopeo from inside the cluster:
 
 ```sh
+
 kubectl run skopeo-tmp -it --rm --image rapidfort/skopeo-ib -- \
-  copy --dest-tls-verify=false \
-  docker://docker.io/library/alpine:latest \
-  docker://zot.zot:5000/alpine:latest
+  copy docker://docker.io/library/alpine:latest docker://zot.zot:5000/alpine:latest
+
+curl -s https://zot.ksat.pupillo.org/v2/_catalog
+kubectl run skopeo-tmp -it --rm --image rapidfort/skopeo-ib -- list-tags docker://zot.ksat.pupillo.org/sentieri-download
+kubectl run skopeo-tmp -it --rm --image rapidfort/skopeo-ib -- list-tags docker://zot.ksat.pupillo.org/apps/aggiorna-sentieri
 ```
 
 
 ## Notes
 ```
 kubectl -n aggiorna-sentieri create job --from=cronjob/sentieri-download download-$(date +%Y-%m-%d-%H%M)
-curl -s https://zot.ksat.pupillo.org/v2/_catalog
-kubectl run skopeo-tmp -it --rm --image rapidfort/skopeo-ib -- list-tags docker://zot.ksat.pupillo.org/sentieri-download
 ```

@@ -34,6 +34,17 @@ spec:
     grafana:
       enabled: true
 
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+
+      sidecar:
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+
       extraLabels:
         app: grafana
 
@@ -49,6 +60,46 @@ spec:
         dashboardsConfigMapRefEnabled: true
         matchLabels:
           app: grafana
+
+    prometheusOperator:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+
+      prometheusConfigReloader:
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+
+    prometheus:
+      prometheusSpec:
+        retention: 24h
+        scrapeInterval: 60s
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512Mi
+
+    alertmanager:
+      alertmanagerSpec:
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+
+    kube-state-metrics:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+
+    prometheus-node-exporter:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
 
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2

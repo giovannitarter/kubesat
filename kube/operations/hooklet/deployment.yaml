@@ -1,0 +1,101 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hooklet
+  namespace: hooklet
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: hooklet
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: hooklet
+    spec:
+      serviceAccountName: hooklet
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: hooklet
+          image: python:3.12-slim-bookworm
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -ec
+          args:
+            - |
+              python -m pip install \
+                --disable-pip-version-check \
+                --no-cache-dir \
+                --target /tmp/python-packages \
+                --requirement /opt/hooklet/requirements.txt
+              exec python -m uvicorn \
+                --app-dir /opt/hooklet \
+                --host 0.0.0.0 \
+                --port 8080 \
+                app:app
+          envFrom:
+            - configMapRef:
+                name: hooklet-config
+            - secretRef:
+                name: hooklet
+          ports:
+            - name: http
+              containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: runner
+              mountPath: /opt/hooklet
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: runner
+          configMap:
+            name: hooklet-runner
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hooklet
+  namespace: hooklet
+spec:
+  selector:
+    app.kubernetes.io/name: hooklet
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

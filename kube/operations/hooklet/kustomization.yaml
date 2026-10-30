@@ -1,0 +1,26 @@
+---
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ./namespace.yaml
+  - ./hooklet.secret.yaml
+  - ./rbac.yaml
+  - ./deployment.yaml
+  - ./httproute.yaml
+
+configMapGenerator:
+  - name: hooklet-runner
+    namespace: hooklet
+    files:
+      - app.py
+      - requirements.txt
+  - name: hooklet-config
+    namespace: hooklet
+    literals:
+      - GITHUB_REPOSITORY=giovannitarter/sat_sentieri
+      - GITHUB_BRANCH=main
+      - JOB_NAMESPACE=builder
+      - JOB_TEMPLATES=build-sentieri-webapp,build-aggiorna-sentieri
+      - LOG_LEVEL=INFO
+      - PYTHONPATH=/tmp/python-packages
