@@ -17,6 +17,6 @@ spec:
             value: /
 
       backendRefs:
-        - name: prometheus-grafana
+        - name: vm-grafana
           port: 80
           weight: 1

@@ -84,6 +84,9 @@ spec:
         otlphttp/tempo:
           endpoint: http://tempo.monitoring.svc.cluster.local:4318
 
+        #prometheusremotewrite:
+        #  endpoint: http://vmsingle-victoria-metrics-victoria-metrics-k8s-stack.monitoring.svc.cluster.local:8428/api/v1/write
+
       service:
         pipelines:
 
@@ -110,6 +113,12 @@ spec:
             exporters:
               - otlphttp/tempo
 
+          metrics:
+            receivers:
+              - otlp
+            processors:
+              - memory_limiter
+              - batch
 ---
 apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease

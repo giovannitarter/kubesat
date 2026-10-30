@@ -19,6 +19,8 @@ spec:
       namespace: flux-system
     - name: gateway
       namespace: flux-system
+    - name: monitoring
+      namespace: flux-system
 
   decryption:
     provider: sops

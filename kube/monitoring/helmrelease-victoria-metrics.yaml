@@ -1,0 +1,141 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: vm
+  namespace: monitoring
+spec:
+  interval: 5m
+
+  dependsOn: []
+#    - name: grafana-operator
+#      namespace: monitoring
+
+  chart:
+    spec:
+      chart: victoria-metrics-k8s-stack
+      version: '0.97.*'
+      sourceRef:
+        kind: HelmRepository
+        name: victoria-metrics-repo
+        namespace: flux-system
+      interval: 5m
+
+  install:
+    timeout: 10m
+    crds: CreateReplace
+
+  upgrade:
+    timeout: 10m
+    crds: CreateReplace
+
+  values:
+
+    victoria-metrics-operator:
+      operator:
+        disable_prometheus_converter: true
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+
+    defaultDashboards:
+      enabled: true
+      grafanaOperator:
+        enabled: true
+        spec:
+          instanceSelector:
+            matchLabels:
+              app: grafana
+              dashboards: grafana
+          allowCrossNamespaceImport: false
+
+    defaultDatasources:
+      grafanaOperator:
+        enabled: true
+        spec:
+          instanceSelector:
+            matchLabels:
+              app: grafana
+              dashboards: grafana
+          allowCrossNamespaceImport: false
+      victoriametrics:
+        datasources:
+          - name: VictoriaMetrics
+            type: prometheus
+            access: proxy
+            uid: VictoriaMetrics
+            isDefault: true
+
+    vmsingle:
+      spec:
+        retentionPeriod: 24h
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        storage:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 5Gi
+
+    vmagent:
+      spec:
+        scrapeInterval: 60s
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+
+    vmalert:
+      spec:
+        evaluationInterval: 60s
+        resources:
+          requests:
+            cpu: 25m
+            memory: 64Mi
+
+    alertmanager:
+      spec:
+        resources:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+
+    grafana:
+      enabled: true
+      forceDeployDatasource: true
+
+      extraLabels:
+        app: grafana
+        dashboards: grafana
+
+      admin:
+        existingSecret: grafana-admin-credentials  # pragma: allowlist secret
+        userKey: GF_SECURITY_ADMIN_USER
+        passwordKey: GF_SECURITY_ADMIN_PASSWORD  # pragma: allowlist secret
+
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+
+      sidecar:
+        datasources:
+          enabled: false
+        dashboards:
+          enabled: false
+
+    kube-state-metrics:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+
+    prometheus-node-exporter:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi

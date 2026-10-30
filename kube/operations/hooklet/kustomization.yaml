@@ -4,6 +4,7 @@ kind: Kustomization
 
 resources:
   - ./namespace.yaml
+  - ./instrumentation.yaml
   - ./hooklet.secret.yaml
   - ./rbac.yaml
   - ./deployment.yaml

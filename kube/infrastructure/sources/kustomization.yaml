@@ -8,5 +8,5 @@ resources:
   - ./grafana.yaml
   - ./keel.yaml
   - ./opentelemetry.yaml
-  - ./prometheus-community.yaml
+  - ./victoria-metrics.yaml
   - ./zot.yaml

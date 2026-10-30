@@ -4,7 +4,8 @@ kind: Kustomization
 
 resources:
   - ./namespace.yaml
-  - ./helmrelease.yaml
+  - ./helmrelease-victoria-metrics.yaml
+  - ./helmrelease-grafana-operator.yaml
   - ./helmrelease-loki.yaml
   - ./helmrelease-otel.yaml
   - ./helmrelease-tempo.yaml

@@ -13,6 +13,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: hooklet
+      annotations:
+        instrumentation.opentelemetry.io/inject-python: "false"
     spec:
       serviceAccountName: hooklet
       securityContext:
