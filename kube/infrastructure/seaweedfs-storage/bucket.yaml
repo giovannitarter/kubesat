@@ -1,0 +1,13 @@
+---
+apiVersion: seaweed.seaweedfs.com/v1
+kind: Bucket
+metadata:
+  name: photo-archive
+  namespace: storage
+spec:
+  clusterRef:
+    name: seaweedfs
+    namespace: storage
+  reclaimPolicy: Retain
+  placement:
+    replication: "000"

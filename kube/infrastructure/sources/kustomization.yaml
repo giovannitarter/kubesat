@@ -8,5 +8,6 @@ resources:
   - ./grafana.yaml
   - ./keel.yaml
   - ./opentelemetry.yaml
+  - ./seaweedfs-operator.yaml
   - ./victoria-metrics.yaml
   - ./zot.yaml

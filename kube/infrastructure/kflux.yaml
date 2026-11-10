@@ -113,6 +113,50 @@ spec:
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
 metadata:
+  name: seaweedfs-operator
+  namespace: flux-system
+
+spec:
+
+  interval: 5m
+  path: "./kube/infrastructure/seaweedfs-operator"
+  prune: true
+  wait: true
+
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+
+  dependsOn:
+    - name: sources
+      namespace: flux-system
+
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: seaweedfs-storage
+  namespace: flux-system
+
+spec:
+
+  interval: 5m
+  path: "./kube/infrastructure/seaweedfs-storage"
+  prune: true
+  wait: true
+
+  sourceRef:
+    kind: GitRepository
+    name: flux-system
+
+  dependsOn:
+    - name: seaweedfs-operator
+      namespace: flux-system
+
+---
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
   name: metallb
   namespace: flux-system
 spec:
